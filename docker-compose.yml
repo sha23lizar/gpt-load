@@ -5,10 +5,10 @@ services:
     #   context: .
     #   dockerfile: Dockerfile
     container_name: gpt-load
-    ports:
-      - "${PORT:-3001}:${PORT:-3001}"
     env_file:
       - .env
+    networks:
+      - overlays-custom-net
     restart: always
     volumes:
       - gpt-load-data:/app/data
@@ -75,3 +75,7 @@ services:
 
 volumes:
   gpt-load-data:
+
+networks:
+  overlays-custom-net:
+    external: true
