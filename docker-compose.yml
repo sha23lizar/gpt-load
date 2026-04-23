@@ -11,7 +11,7 @@ services:
       - .env
     restart: always
     volumes:
-      - ./data:/app/data
+      - gpt-load-data:/app/data
     stop_grace_period: ${SERVER_GRACEFUL_SHUTDOWN_TIMEOUT:-10}s
     healthcheck:
       test: wget -q --spider -T 10 -O /dev/null http://localhost:${PORT:-3001}/health
@@ -72,3 +72,6 @@ services:
   #     interval: 5s
   #     timeout: 3s
   #     retries: 3
+
+volumes:
+  gpt-load-data:
