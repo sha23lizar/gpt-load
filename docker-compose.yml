@@ -1,9 +1,6 @@
 services:
   gpt-load:
     image: ghcr.io/tbphp/gpt-load:latest
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile
     container_name: gpt-load
     env_file:
       - .env
@@ -12,20 +9,31 @@ services:
     restart: always
     labels:
       - "traefik.enable=true"
+      # OBLIGATORIO: Usar la red que conectamos a Traefik
       - "traefik.docker.network=overlays-custom-net"
-      - "traefik.http.routers.gpt-load.rule=Host(`${DOMAIN}`)"
-      - "traefik.http.routers.gpt-load.entrypoints=websecure"
-      - "traefik.http.routers.gpt-load.tls.certresolver=le"
-      - "traefik.http.services.gpt-load.loadbalancer.server.port=3001"
+
+      # Router HTTPS
+      - "traefik.http.routers.gpt-load-secure.rule=Host(`gemini.overlays.tv`)"
+      - "traefik.http.routers.gpt-load-secure.entrypoints=websecure"
+      - "traefik.http.routers.gpt-load-secure.tls.certresolver=letsencrypt"
+      - "traefik.http.services.gpt-load-secure.loadbalancer.server.port=3001"
+
+      # Router HTTP (Redirección)
+      - "traefik.http.routers.gpt-load-http.rule=Host(`gemini.overlays.tv`)"
+      - "traefik.http.routers.gpt-load-http.entrypoints=web"
+      - "traefik.http.routers.gpt-load-http.middlewares=redirect-to-https"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+
     volumes:
       - gpt-load-data:/app/data
-    stop_grace_period: ${SERVER_GRACEFUL_SHUTDOWN_TIMEOUT:-10}s
     healthcheck:
-      test: wget -q --spider -T 10 -O /dev/null http://localhost:${PORT:-3001}/health
+      # Asegúrate de que el puerto aquí coincida con el interno de la app
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:3001/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
+
     # depends_on:
     #   mysql:
     #     condition: service_healthy
@@ -79,6 +87,7 @@ services:
   #     interval: 5s
   #     timeout: 3s
   #     retries: 3
+
 
 volumes:
   gpt-load-data:
