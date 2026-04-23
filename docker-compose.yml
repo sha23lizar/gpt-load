@@ -4,28 +4,18 @@ services:
     container_name: gpt-load
     env_file:
       - .env
-    # Mantenemos el mapeo de puertos por si necesitas acceso directo vía IP:PORT
-    ports:
-      - "${PORT:-3001}:3001"
     networks:
       - overlays-custom-net
     restart: always
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=overlays-custom-net"
-
-      # Router HTTPS (Secure)
+      # Router HTTPS
       - "traefik.http.routers.gpt-load.rule=Host(`${DOMAIN}`)"
       - "traefik.http.routers.gpt-load.entrypoints=websecure"
-      # CORRECCIÓN: Cambiado de 'le' a 'letsencrypt' para coincidir con tu config de Dokploy
       - "traefik.http.routers.gpt-load.tls.certresolver=letsencrypt"
+      # OJO: Puerto interno donde la app escucha realmente
       - "traefik.http.services.gpt-load.loadbalancer.server.port=3001"
-
-      # Router HTTP (Redirección automática)
-      - "traefik.http.routers.gpt-load-http.rule=Host(`${DOMAIN}`)"
-      - "traefik.http.routers.gpt-load-http.entrypoints=web"
-      - "traefik.http.routers.gpt-load-http.middlewares=redirect-to-https"
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
 
     volumes:
       - gpt-load-data:/app/data
